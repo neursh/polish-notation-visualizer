@@ -1,38 +1,93 @@
 import { motion } from 'framer-motion';
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
+import useAppContext from './context';
 
 export default function App() {
-  const keyboardEvent = useCallback(() => {
-    window.addEventListener('keydown', (e) => {
-      console.log(e.key);
-    });
+  const addKey = useAppContext((state) => state.addKey);
+
+  const keyboardEvent = useCallback((e: KeyboardEvent) => addKey(e.key), []);
+
+  const keyboardEventRegister = useCallback(() => {
+    window.addEventListener('keydown', keyboardEvent);
   }, []);
 
-  useEffect(() => keyboardEvent, [keyboardEvent]);
+  const keyboardEventRemover = useCallback(() => {
+    window.removeEventListener('keydown', keyboardEvent);
+  }, []);
+
+  useEffect(() => {
+    keyboardEventRegister();
+
+    return keyboardEventRemover;
+  }, [keyboardEventRegister]);
 
   return (
-    <>
-      <div className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 w-1/2 h-40 overflow-y-scroll pt-2 pb-2 pr-4 pl-4 outline outline-gray-300 rounded-lg">
+    <div className="flex flex-col w-full h-screen items-center justify-center">
+      <div className="w-1/2 h-40 overflow-y-scroll pt-2 pb-2 pr-4 pl-4 outline outline-gray-300 outline-2 rounded-lg">
         <CharactersContainer />
       </div>
-    </>
+      <div className="flex w-1/2 justify-between">
+        <Counter />
+      </div>
+    </div>
+  );
+}
+
+function Counter() {
+  const numbers = useAppContext((state) => state.numbers);
+  const operators = useAppContext((state) => state.operators);
+  const pivot = useMemo(() => numbers - operators, [numbers, operators]);
+  const areBothZero = useMemo(
+    () => numbers === 0 && operators === 0,
+    [numbers, operators]
+  );
+
+  return (
+    <div
+      className={`flex gap-2 mt-2 pr-2 pl-2 rounded-lg outline outline-1 ${
+        pivot === 1
+          ? 'outline-green-500'
+          : areBothZero
+          ? 'outline-gray-400'
+          : 'outline-red-500'
+      }`}
+    >
+      <p>
+        <span className="font-bold">{numbers}</span> numbers
+      </p>
+      <p>
+        <span className="font-bold">{operators}</span> operators
+      </p>
+      <div
+        className={`h-full w-[1px] ${
+          pivot === 1
+            ? 'bg-green-500'
+            : areBothZero
+            ? 'bg-gray-400'
+            : 'bg-red-500'
+        }`}
+      />
+      <p>
+        {pivot > 1
+          ? 'Too many numbers'
+          : pivot < 1
+          ? areBothZero
+            ? 'Waiting for input...'
+            : 'Too many operators'
+          : 'Valid'}
+      </p>
+    </div>
   );
 }
 
 function CharactersContainer() {
+  const keyList = useAppContext((state) => state.keyList);
+
   return (
     <div className="flex flex-wrap gap-6 font-semibold select-none">
-      <Character value="1" />
-      <Character value="2" />
-      <Character value="3" />
-      <Character value="4" />
-      <Character value="5" />
-      <Character value="6" />
-      <Character value="7" />
-      <Character value="8" />
-      <Character value="9" />
-      <Character value="-" />
-      <Character value="*" />
+      {keyList.map((value, index) => (
+        <Character value={value} key={`key-${index}`} />
+      ))}
     </div>
   );
 }
