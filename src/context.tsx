@@ -1,25 +1,13 @@
-import { create } from 'zustand';
+import { hookstate, none } from '@hookstate/core';
 
-interface AppState {
-  total: number;
-  keyList: string[];
-}
+export default abstract class AppContext {
+  static total = hookstate(0);
+  static keyList = hookstate<string[]>([]);
 
-interface AppActions {
-  addKey: (key: string) => void;
-}
-
-const initialState: AppState = {
-  total: 0,
-  keyList: [],
-};
-
-const useAppContext = create<AppState & AppActions>()((set) => ({
-  ...initialState,
-  addKey: (key) => {
+  static addKey(key: string) {
     if ('1234567890.+-*/ '.includes(key)) {
-      const currentState = useAppContext.getState();
-      const previousKey = currentState.keyList[currentState.keyList.length - 1];
+      const keyList = AppContext.keyList.get();
+      const [previousKey] = keyList.slice(-1);
 
       const isPreviousOperator = '+-*/'.includes(previousKey);
       const isPreviousNumber = '1234567890'.includes(previousKey);
@@ -39,28 +27,22 @@ const useAppContext = create<AppState & AppActions>()((set) => ({
         (isPreviousNumber && isOperator) ||
         (isPreviousOperator && isOperator)
       ) {
-        return set((state) => ({
-          total: state.total + 2,
-          keyList: [...state.keyList, ' ', key],
-        }));
+        AppContext.total.set((p) => p + 2);
+        AppContext.keyList.merge([' ', key]);
+        return;
       }
 
-      return set((state) => ({
-        total: state.total + 1,
-        keyList: [...state.keyList, key],
-      }));
+      AppContext.total.set((p) => p + 1);
+      AppContext.keyList[AppContext.keyList.length].set(key);
+      return;
     }
 
     if (key === 'Backspace') {
-      set((state) => {
-        const isEmpty = state.keyList.length === 0;
-        return {
-          total: state.total - (isEmpty ? 0 : 1),
-          keyList: [...state.keyList.slice(0, -1)],
-        };
-      });
-    }
-  },
-}));
+      const isEmpty = AppContext.keyList.length === 0;
 
-export default useAppContext;
+      AppContext.total.set((p) => p - (isEmpty ? 0 : 1));
+      AppContext.keyList[AppContext.keyList.length - 1].set(none);
+      return;
+    }
+  }
+}
