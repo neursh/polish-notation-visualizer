@@ -12,10 +12,9 @@
   "app": {
     "windows": [
       {
-        "title": "rpn-visualizer",
+        "title": "Reverse Polish notation visualizer",
         "width": 800,
         "height": 600
-        
       }
     ],
     "security": {
