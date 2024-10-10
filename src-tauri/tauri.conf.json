@@ -10,11 +10,13 @@
     "frontendDist": "../dist"
   },
   "app": {
+    "withGlobalTauri": true,
     "windows": [
       {
-        "title": "Reverse Polish notation visualizer",
+        "title": "Reverse Polish Notation Visualizer",
         "width": 800,
-        "height": 600
+        "height": 600,
+        "decorations": false
       }
     ],
     "security": {
