@@ -69,7 +69,7 @@ function Character(props: { value: string; id: string }) {
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.25, ease: [0.25, 0.25, 0, 1] }}
       >
-        {props.value === ' ' ? '\u00A0' : props.value}
+        {props.value === ' ' ? '\u00A0\u00A0' : props.value}
       </motion.span>
     </p>
   );
