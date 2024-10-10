@@ -29,8 +29,6 @@ const useAppContext = create<AppState & AppActions>()((set) => ({
       if (
         (previousKey === key && !isOperator && !isNumber) ||
         (!previousKey && !isNumber) ||
-        (!previousKey && key === '0') ||
-        (previousKey === ' ' && key === '0') ||
         (key === '.' && !isPreviousNumber)
       ) {
         return;
