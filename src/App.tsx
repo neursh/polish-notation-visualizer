@@ -32,9 +32,9 @@ export default function App() {
   return (
     <>
       <Titlebar />
-      <div className="flex flex-col w-full h-[calc(100vh-48px)] items-center justify-center">
-        <div className="relative w-1/2">
-          <div className="min-h-[52px] w-full h-full flex items-end overflow-clip pt-2 pb-2 pr-4 pl-4 outline outline-gray-300 outline-2 rounded-lg">
+      <div className="flex flex-col w-full h-screen items-center justify-top">
+        <div className="relative w-2/3">
+          <div className="min-h-[52px] w-full flex items-end overflow-clip pt-2 mt-[calc(48px+5vh)] pb-2 mb-4 pr-4 pl-4 outline outline-gray-300 outline-2 rounded-lg">
             <CharactersContainer />
           </div>
         </div>
@@ -44,13 +44,30 @@ export default function App() {
   );
 }
 
-function Titlebar() {
+const Titlebar = memo(() => {
   const appWindow = useMemo(() => getCurrentWindow(), []);
+  const isMaximized = useHookstate(false);
+
+  const windowResizeListener = useCallback(
+    () =>
+      appWindow.onResized(async () => {
+        isMaximized.set(await appWindow.isMaximized());
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [appWindow]
+  );
+
+  useEffect(() => {
+    const listener = windowResizeListener();
+    return () => {
+      listener.then((unlisten) => unlisten());
+    };
+  }, [windowResizeListener]);
 
   return (
     <div
       data-tauri-drag-region
-      className="relative top-0 flex items-center justify-between select-none w-full h-12 pl-3"
+      className="fixed top-0 flex items-center justify-between select-none w-full h-12 pl-3 z-10 backdrop-blur-md"
     >
       <div data-tauri-drag-region className="flex gap-2 items-center">
         <svg data-tauri-drag-region className="w-6 h-6" viewBox="0 0 256 256">
@@ -76,15 +93,38 @@ function Titlebar() {
           className="w-12 h-12 flex justify-center items-center"
           onClick={() => appWindow.toggleMaximize()}
         >
-          <svg width="10" height="10" viewBox="0 0 10 10">
-            <line x1="0.5" y1="2" x2="0.5" y2="10" stroke="black" />
-            <line x1="1" y1="9.5" x2="8" y2="9.5" stroke="black" />
-            <line x1="1" y1="2.5" x2="8" y2="2.5" stroke="black" />
-            <line x1="7.5" y1="9" x2="7.5" y2="3" stroke="black" />
-            <line x1="2.5" y1="2" x2="2.5" stroke="black" />
-            <line x1="3" y1="0.5" x2="10" y2="0.5" stroke="black" />
-            <line x1="9.5" y1="1" x2="9.5" y2="7" stroke="black" />
-            <line x1="8" y1="7.5" x2="10" y2="7.5" stroke="black" />
+          <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+            {isMaximized.get() ? (
+              <>
+                <rect
+                  x="2.5"
+                  y="0.5"
+                  width="7"
+                  height="7"
+                  rx="2"
+                  stroke="black"
+                />
+                <rect
+                  x="0.5"
+                  y="2.5"
+                  width="7"
+                  height="7"
+                  rx="2"
+                  fill="white"
+                  stroke="black"
+                />
+              </>
+            ) : (
+              <rect
+                x="0"
+                y="0"
+                width="10"
+                height="10"
+                rx="4"
+                fill="white"
+                stroke="black"
+              />
+            )}
           </svg>
         </div>
         <div
@@ -101,7 +141,7 @@ function Titlebar() {
       </div>
     </div>
   );
-}
+});
 
 function CharactersContainer() {
   const keyList = useHookstate(AppContext.keyList);
