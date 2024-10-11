@@ -1,6 +1,15 @@
 import { hookstate, none } from '@hookstate/core';
 
+interface CalculationResult {
+  rawData: (string | number)[];
+  highlightStartsFrom: number;
+  calculationAboutToMake: (string | number)[];
+}
+
 export default abstract class AppContext {
+  static displayingResult = hookstate(false);
+  static result = hookstate<CalculationResult[]>([]);
+  static calculating = hookstate(false);
   static total = hookstate(0);
   static keyList = hookstate<string[]>([]);
 
@@ -44,5 +53,64 @@ export default abstract class AppContext {
       AppContext.keyList[AppContext.keyList.length - 1].set(none);
       return;
     }
+  }
+
+  static calculate() {
+    AppContext.calculating.set(true);
+
+    const stackStages: CalculationResult[] = [];
+    const stack: number[] = [];
+    const keyChain = AppContext.keyList.get().join('');
+    const tokens = keyChain.split(' ');
+
+    tokens.forEach((value, index) => {
+      if ('+-*/'.includes(value)) {
+        const [rightHandle, leftHandle] = [stack.pop()!, stack.pop()!];
+
+        let thisResult = 0;
+
+        if (value === '+') {
+          thisResult = leftHandle + rightHandle;
+        }
+        if (value === '-') {
+          thisResult = leftHandle - rightHandle;
+        }
+        if (value === '*') {
+          thisResult = leftHandle * rightHandle;
+        }
+        if (value === '/') {
+          thisResult = leftHandle / rightHandle;
+        }
+
+        thisResult = Math.round(thisResult * 10000) / 10000;
+
+        stackStages.push({
+          rawData: [...stack, leftHandle, rightHandle, ...tokens.slice(index)],
+          highlightStartsFrom: stack.length,
+          calculationAboutToMake: [
+            leftHandle,
+            value,
+            rightHandle,
+            '=',
+            thisResult,
+          ],
+        });
+
+        stack.push(thisResult);
+      } else {
+        stack.push(Number.parseFloat(value));
+      }
+    });
+
+    const final = stack.pop()!;
+
+    stackStages.push({
+      rawData: [final],
+      highlightStartsFrom: 0,
+      calculationAboutToMake: [final],
+    });
+
+    AppContext.result.set(stackStages);
+    AppContext.calculating.set(false);
   }
 }

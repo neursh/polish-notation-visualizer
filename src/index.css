@@ -103,6 +103,7 @@
 }
 
 html {
+  user-select: none;
   -ms-overflow-style: none;
   scrollbar-width: none;
 }

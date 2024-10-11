@@ -8,7 +8,7 @@ const Titlebar = memo(() => {
   return (
     <div
       data-tauri-drag-region
-      className="fixed top-0 flex items-center justify-between select-none w-full h-12 pl-3 z-10 backdrop-blur-md"
+      className="fixed top-0 flex items-center justify-between w-full h-12 pl-3 z-10 backdrop-blur-md"
     >
       <Title />
       <div className="flex items-center">
@@ -77,8 +77,8 @@ const MaximizeToggle = memo((props: { appWindow: Window }) => {
         {isMaximized.get() ? (
           <>
             <path
-              fill-rule="evenodd"
-              clip-rule="evenodd"
+              fillRule="evenodd"
+              clipRule="evenodd"
               d="M5 1H7C8.10457 1 9 1.89543 9 3V5C9 6.10457 8.10457 7 7 7V8C8.65685 8 10 6.65685 10 5V3C10 1.34315 8.65685 0 7 0H5C3.34315 0 2 1.34315 2 3H3C3 1.89543 3.89543 1 5 1Z"
               fill="black"
             />

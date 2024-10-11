@@ -1,38 +1,20 @@
-import { useCallback, useEffect } from 'react';
+import { useHookstate } from '@hookstate/core';
 import CharactersContainer from './components/CharactersContainer';
 import Cursor from './components/Cursor';
 import Titlebar from './components/Titlebar';
-import { default as AppContext } from './contextProvider';
+import AppContext from './contextProvider';
+import KeyRecord from './utils/KeyRecord';
 
 export default function App() {
-  const addKey = AppContext.addKey;
-
-  const keyboardEvent = useCallback(
-    (e: KeyboardEvent) => {
-      addKey(e.key);
-    },
-    [addKey]
-  );
-
-  const keyboardEventRegister = useCallback(() => {
-    window.addEventListener('keydown', keyboardEvent);
-  }, [keyboardEvent]);
-
-  const keyboardEventRemover = useCallback(() => {
-    window.removeEventListener('keydown', keyboardEvent);
-  }, [keyboardEvent]);
-
-  useEffect(() => {
-    keyboardEventRegister();
-
-    return keyboardEventRemover;
-  }, [keyboardEventRegister, keyboardEventRemover]);
+  const calculating = useHookstate(AppContext.calculating);
+  const displayingResult = useHookstate(AppContext.displayingResult);
 
   return (
     <>
+      {!calculating.get() && !displayingResult.get() && <KeyRecord />}
       <Titlebar />
       <CharactersContainer />
-      <Cursor />
+      {!calculating.get() && !displayingResult.get() && <Cursor />}
     </>
   );
 }

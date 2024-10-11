@@ -48,7 +48,7 @@ const Cursor = memo(() => {
         style={{ translateX: springPosition.x, translateY: springPosition.y }}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="absolute top-0 w-[2px] h-8 bg-gray-300"
+        className="absolute top-0 w-[2px] h-8 bg-gray-400"
       />
     </>
   );
