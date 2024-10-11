@@ -16,9 +16,15 @@ const CharactersContainer = memo(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const highlight = useHookstate<number>(-1);
+  const highlightColors = useMemo(() => ['green', 'green', 'red'], []);
+
   const goThrough = useCallback(() => {
     if (result.length > 0) {
       displayingResult.set(true);
+      highlight.set(
+        result[currentDisplayResult.get()].highlightStartsFrom.get()
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result]);
@@ -26,13 +32,17 @@ const CharactersContainer = memo(() => {
   useEffect(goThrough, [goThrough]);
 
   useEffect(() => {
-    if (
-      displayingResult.get() &&
-      result.length - 1 < currentDisplayResult.get()
-    ) {
-      result.set([]);
-      currentDisplayResult.set(0);
-      displayingResult.set(false);
+    if (displayingResult.get()) {
+      if (result.length - 1 < currentDisplayResult.get()) {
+        result.set([]);
+        currentDisplayResult.set(0);
+        displayingResult.set(false);
+        highlight.set(-1);
+      }
+
+      highlight.set(
+        result[currentDisplayResult.get()].highlightStartsFrom.get()
+      );
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [displayingResult, currentDisplayResult]);
@@ -54,6 +64,11 @@ const CharactersContainer = memo(() => {
                 value={displayingResult.get() ? `${value}\u00A0\u00A0` : value}
                 key={`${index}${displayingResult.get() ? Math.random() : ''}`}
                 type={displayingResult.get() ? 'r' : 'e'}
+                highlightColor={
+                  displayingResult.get()
+                    ? highlightColors[index - highlight.get()]
+                    : undefined
+                }
                 delay={displayingResult.get() ? index * 0.025 : 0}
                 id={`key-${index}`}
               />
@@ -109,6 +124,7 @@ const Character = memo(
     id: string;
     type: string;
     delay: number;
+    highlightColor?: string;
   }) => {
     const variants = useMemo(
       () => ({
@@ -121,6 +137,7 @@ const Character = memo(
     );
     return (
       <motion.p
+        style={{ color: props.highlightColor }}
         id={props.id}
         variants={variants}
         initial={props.type === 'r' ? 'hiddenWithOffset' : 'hidden'}
