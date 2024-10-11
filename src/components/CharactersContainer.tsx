@@ -5,6 +5,7 @@ import { memo, useCallback, useEffect, useMemo } from 'react';
 import AppContext from '../contextProvider';
 
 const CharactersContainer = memo(() => {
+  const calculating = useHookstate(AppContext.calculating);
   const total = useHookstate(AppContext.total);
   const keyList = useHookstate(AppContext.keyList);
   const result = useHookstate(AppContext.result);
@@ -149,22 +150,24 @@ const CharactersContainer = memo(() => {
               {currentDisplayResult.get() > 0 ? 'Previous' : 'Cancel'}
             </a>
           )}
-          <a
-            className="bg-black rounded-full pt-2 pb-2 pl-4 pr-4 text-white"
-            onClick={() =>
-              !displayingResult.get()
-                ? AppContext.calculate()
+          {!calculating.get() && (
+            <a
+              className="bg-black rounded-full pt-2 pb-2 pl-4 pr-4 text-white"
+              onClick={() =>
+                !displayingResult.get()
+                  ? AppContext.calculate()
+                  : currentDisplayResult.get() < result.length - 1
+                  ? currentDisplayResult.set((p) => p + 1)
+                  : reset()
+              }
+            >
+              {!displayingResult.get()
+                ? 'Calculate'
                 : currentDisplayResult.get() < result.length - 1
-                ? currentDisplayResult.set((p) => p + 1)
-                : reset()
-            }
-          >
-            {!displayingResult.get()
-              ? 'Calculate'
-              : currentDisplayResult.get() < result.length - 1
-              ? 'Next'
-              : 'Finish'}
-          </a>
+                ? 'Next'
+                : 'Finish'}
+            </a>
+          )}
         </div>
       </div>
     </div>
