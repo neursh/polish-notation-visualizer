@@ -16,16 +16,23 @@ export default abstract class AppContext {
 
   static addKey(key: string) {
     if ('1234567890.+-*/ '.includes(key)) {
-      AppContext.total.set((p) => p + 1);
       AppContext.keyList[AppContext.keyList.length].set(key);
+      AppContext.total.set(AppContext.keyList.length);
+      return;
+    }
+
+    if (key === ' ' && AppContext.total.get() === 0) {
       return;
     }
 
     if (key === 'Backspace') {
       const isEmpty = AppContext.keyList.length === 0;
 
-      AppContext.total.set((p) => p - (isEmpty ? 0 : 1));
-      AppContext.keyList[AppContext.keyList.length - 1].set(none);
+      if (!isEmpty) {
+        AppContext.keyList[AppContext.keyList.length - 1].set(none);
+        AppContext.total.set(AppContext.keyList.length);
+      }
+
       return;
     }
   }
