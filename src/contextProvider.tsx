@@ -19,10 +19,24 @@ export default abstract class AppContext {
     '*': '×',
     x: '×',
     '/': '÷',
+    ':': '÷',
   };
 
   static addKey(key: string) {
-    if ('1234567890.+-*x/ '.includes(key)) {
+    // Duplicates to support pasting.
+    if ('1234567890.+-−*×x/:÷ '.includes(key)) {
+      if (key === ' ') {
+        if (AppContext.total.get() === 0) {
+          return;
+        }
+
+        const previousKey =
+          AppContext.keyList[AppContext.keyList.length - 1].get();
+        if (previousKey === ' ') {
+          return;
+        }
+      }
+
       const operator =
         AppContext.operatorsMapping[
           key as keyof typeof AppContext.operatorsMapping
@@ -31,21 +45,13 @@ export default abstract class AppContext {
         operator ? operator : key
       );
       AppContext.total.set(AppContext.keyList.length);
+
       return;
     }
 
-    if (key === ' ' && AppContext.total.get() === 0) {
-      return;
-    }
-
-    if (key === 'Backspace') {
-      const isEmpty = AppContext.keyList.length === 0;
-
-      if (!isEmpty) {
-        AppContext.keyList[AppContext.keyList.length - 1].set(none);
-        AppContext.total.set(AppContext.keyList.length);
-      }
-
+    if (key === 'Backspace' && AppContext.total.get() > 0) {
+      AppContext.keyList[AppContext.keyList.length - 1].set(none);
+      AppContext.total.set(AppContext.keyList.length);
       return;
     }
   }
