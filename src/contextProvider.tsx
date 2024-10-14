@@ -1,8 +1,9 @@
 import { hookstate, none } from '@hookstate/core';
+import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager';
 
 interface CalculationResult {
   rawData: (string | number)[];
-  highlightStartsFrom: number;
+  highlight: Map<number, string>;
   calculationAboutToMake: (string | number)[];
 }
 
@@ -42,25 +43,36 @@ export default abstract class AppContext {
         const [rightHandle, leftHandle] = [stack.pop()!, stack.pop()!];
 
         let thisResult = 0;
+        let operationColor = '';
 
         if (value === '+') {
+          operationColor = 'blue';
           thisResult = leftHandle + rightHandle;
         }
         if (value === '-') {
+          operationColor = 'red';
           thisResult = leftHandle - rightHandle;
         }
         if (value === '*') {
+          operationColor = 'orange';
           thisResult = leftHandle * rightHandle;
         }
         if (value === '/') {
+          operationColor = '#cc66ff';
           thisResult = leftHandle / rightHandle;
         }
 
         thisResult = Math.round(thisResult * 10000) / 10000;
 
+        const highlight = new Map<number, string>([
+          [stack.length, 'green'],
+          [stack.length + 1, 'green'],
+          [stack.length + 2, operationColor],
+        ]);
+
         stackStages.push({
           rawData: [...stack, leftHandle, rightHandle, ...tokens.slice(index)],
-          highlightStartsFrom: stack.length,
+          highlight: highlight,
           calculationAboutToMake: [
             leftHandle,
             value,
@@ -77,14 +89,48 @@ export default abstract class AppContext {
     });
 
     const final = stack.pop()!;
+    const highlight = new Map<number, string>([[0, 'green']]);
 
     stackStages.push({
       rawData: [final],
-      highlightStartsFrom: 0,
+      highlight: highlight,
       calculationAboutToMake: [final],
     });
 
     AppContext.result.set(stackStages);
     AppContext.calculating.set(false);
+  }
+
+  static resetCalculation() {
+    AppContext.result.set([]);
+    AppContext.displayingResult.set(false);
+  }
+
+  static clear() {
+    AppContext.total.set(0);
+    AppContext.keyList.set([]);
+  }
+
+  static async copy() {
+    await writeText(AppContext.keyList.get().join(''));
+  }
+
+  static async paste() {
+    AppContext.calculating.set(true);
+
+    const text = (await readText()).split('');
+    let current = 0;
+    const total = text.length;
+    const recall = () =>
+      setTimeout(() => {
+        if (current < total) {
+          AppContext.addKey(text[current]);
+          current++;
+          recall();
+        } else {
+          AppContext.calculating.set(false);
+        }
+      }, 25);
+    recall();
   }
 }
