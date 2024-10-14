@@ -6,9 +6,6 @@ export default {
       fontFamily: {
         sans: ['Satoshi', 'sans-serif'],
       },
-      animation: {
-        'spin-slow': 'spin 3s linear infinite',
-      },
     },
   },
   plugins: [],
