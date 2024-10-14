@@ -14,9 +14,22 @@ export default abstract class AppContext {
   static total = hookstate(0);
   static keyList = hookstate<string[]>([]);
 
+  static operatorsMapping = {
+    '-': '−',
+    '*': '×',
+    x: '×',
+    '/': '÷',
+  };
+
   static addKey(key: string) {
-    if ('1234567890.+-*/ '.includes(key)) {
-      AppContext.keyList[AppContext.keyList.length].set(key);
+    if ('1234567890.+-*x/ '.includes(key)) {
+      const operator =
+        AppContext.operatorsMapping[
+          key as keyof typeof AppContext.operatorsMapping
+        ];
+      AppContext.keyList[AppContext.keyList.length].set(
+        operator ? operator : key
+      );
       AppContext.total.set(AppContext.keyList.length);
       return;
     }
@@ -46,7 +59,7 @@ export default abstract class AppContext {
     const tokens = keyChain.split(' ');
 
     tokens.forEach((value, index) => {
-      if ('+-*/'.includes(value)) {
+      if ('+−×÷'.includes(value)) {
         const [rightHandle, leftHandle] = [stack.pop()!, stack.pop()!];
 
         let thisResult = 0;
@@ -56,15 +69,15 @@ export default abstract class AppContext {
           operationColor = 'blue';
           thisResult = leftHandle + rightHandle;
         }
-        if (value === '-') {
+        if (value === '−') {
           operationColor = 'red';
           thisResult = leftHandle - rightHandle;
         }
-        if (value === '*') {
+        if (value === '×') {
           operationColor = 'orange';
           thisResult = leftHandle * rightHandle;
         }
-        if (value === '/') {
+        if (value === '÷') {
           operationColor = '#cc66ff';
           thisResult = leftHandle / rightHandle;
         }
