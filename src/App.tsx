@@ -6,15 +6,26 @@ import AppContext from './contextProvider';
 import KeyRecord from './utils/KeyRecord';
 
 export default function App() {
-  const calculating = useHookstate(AppContext.calculating);
-  const displayingResult = useHookstate(AppContext.displayingResult);
-
   return (
     <>
-      {!calculating.get() && !displayingResult.get() && <KeyRecord />}
       <Titlebar />
       <CharactersContainer />
-      {!calculating.get() && !displayingResult.get() && <Cursor />}
+      <Utilities />
+    </>
+  );
+}
+
+function Utilities() {
+  const calculating = useHookstate(AppContext.calculating);
+  const displayingResult = useHookstate(AppContext.displayingResult);
+  return (
+    <>
+      {!calculating.get() && !displayingResult.get() && (
+        <>
+          <KeyRecord />
+          <Cursor />
+        </>
+      )}
     </>
   );
 }
