@@ -99,7 +99,11 @@ export default abstract class AppContext {
     const stackStages: IterationResult[] = [];
     const stack: number[] = [];
     const keyChain = AppContext.keyList.get().join('');
-    const tokens = keyChain.split(' ').filter((value) => value !== '');
+    let tokens = keyChain.split(' ').filter((value) => value !== '');
+
+    if (AppContext.notationType.get() === NotationType.Normal) {
+      tokens = tokens.reverse();
+    }
 
     for (let index = 0; index < tokens.length; index++) {
       const value = tokens[index];
@@ -157,14 +161,37 @@ export default abstract class AppContext {
 
         thisResult = Math.round(thisResult * 10000) / 10000;
 
-        const highlight = new Map<number, string>([
-          [stack.length, 'green'],
-          [stack.length + 1, 'green'],
-          [stack.length + 2, operationColor],
-        ]);
+        let rawData = [
+          ...stack,
+          leftHandle,
+          rightHandle,
+          ...tokens.slice(index),
+        ];
+
+        if (AppContext.notationType.get() === NotationType.Normal) {
+          rawData = rawData.reverse();
+        }
+
+        let highlightArray: [number, string][] = [];
+
+        if (AppContext.notationType.get() === NotationType.Normal) {
+          highlightArray = [
+            [rawData.length - (stack.length + 1), 'green'],
+            [rawData.length - (stack.length + 2), 'green'],
+            [rawData.length - (stack.length + 3), operationColor],
+          ];
+        } else {
+          highlightArray = [
+            [stack.length, 'green'],
+            [stack.length + 1, 'green'],
+            [stack.length + 2, operationColor],
+          ];
+        }
+
+        const highlight = new Map<number, string>(highlightArray);
 
         stackStages.push({
-          rawData: [...stack, leftHandle, rightHandle, ...tokens.slice(index)],
+          rawData: rawData,
           calculationStartsAt: stack.length,
           calculationResult: thisResult,
           highlight: highlight,
@@ -190,7 +217,7 @@ export default abstract class AppContext {
       calculationStartsAt: 0,
       calculationResult: final,
       highlight: new Map<number, string>([[0, 'green']]),
-      calculationAboutToMake: [final],
+      calculationAboutToMake: ['Result:', final],
     });
 
     AppContext.result.set(stackStages);

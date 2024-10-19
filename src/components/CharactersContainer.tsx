@@ -227,7 +227,7 @@ function SelectNotationType() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const width = useMotionValue(100);
+  const width = useMotionValue(80);
   const rotate = useMotionValue(0);
   useEffect(() => {
     if (notationType.get() === NotationType.Normal) {
