@@ -25,6 +25,7 @@ export default abstract class AppContext {
   static operatorSymbolsMapping = {
     '*': '×',
     x: '×',
+    X: '×',
     ':': '/',
   };
 
