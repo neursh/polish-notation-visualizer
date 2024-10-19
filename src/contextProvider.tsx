@@ -1,52 +1,43 @@
 import { hookstate, none } from '@hookstate/core';
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager';
 
-interface CalculationResult {
+export interface IterationResult {
   rawData: (string | number)[];
+  calculationStartsAt: number;
+  calculationResult: number | string;
   highlight: Map<number, string>;
-  calculationAboutToMake: (string | number)[];
+  calculationAboutToMake: (string | number | undefined)[];
 }
 
 export default abstract class AppContext {
   static displayingResult = hookstate(false);
-  static result = hookstate<CalculationResult[]>([]);
+  static result = hookstate<IterationResult[]>([]);
   static calculating = hookstate(false);
   static total = hookstate(0);
   static keyList = hookstate<string[]>([]);
 
-  static operatorsMapping = {
-    '-': '−',
+  static operatorSymbolsMapping = {
     '*': '×',
     x: '×',
-    '/': '÷',
-    ':': '÷',
+    ':': '/',
   };
 
+  static allowedKeys = '1234567890.+-*×xX/:% ';
+
+  static numbers = '1234567890';
+  static operators = '+-×/%';
+
+  static assert(condition: boolean) {
+    if (!condition) throw Error('Condition not met');
+  }
+
   static addKey(key: string) {
-    // Duplicates to support pasting.
-    if ('1234567890.+-−*×x/:÷ '.includes(key)) {
-      if (key === ' ') {
-        if (AppContext.total.get() === 0) {
-          return;
-        }
-
-        const previousKey =
-          AppContext.keyList[AppContext.keyList.length - 1].get();
-        if (previousKey === ' ') {
-          return;
-        }
-      }
-
-      const operator =
-        AppContext.operatorsMapping[
-          key as keyof typeof AppContext.operatorsMapping
-        ];
-      AppContext.keyList[AppContext.keyList.length].set(
-        operator ? operator : key
-      );
-      AppContext.total.set(AppContext.keyList.length);
-
-      return;
+    const operatorSymbol =
+      AppContext.operatorSymbolsMapping[
+        key as keyof typeof AppContext.operatorSymbolsMapping
+      ];
+    if (operatorSymbol) {
+      key = operatorSymbol;
     }
 
     if (key === 'Backspace' && AppContext.total.get() > 0) {
@@ -54,19 +45,85 @@ export default abstract class AppContext {
       AppContext.total.set(AppContext.keyList.length);
       return;
     }
+
+    // Duplicates to support pasting.
+    if (!AppContext.allowedKeys.includes(key)) return;
+
+    const previousKey = AppContext.keyList[AppContext.keyList.length - 1].get();
+
+    if (key === ' ') {
+      if (AppContext.total.get() === 0) {
+        return;
+      }
+      if (previousKey === ' ') {
+        return;
+      }
+    }
+
+    const previousKeyType = {
+      isNumber: AppContext.numbers.includes(previousKey),
+      isOperator: AppContext.operators.includes(previousKey),
+    };
+    const currentKeyType = {
+      isNumber: AppContext.numbers.includes(key),
+      isOperator: AppContext.operators.includes(key),
+    };
+
+    if (
+      (previousKeyType.isNumber && currentKeyType.isOperator) ||
+      (previousKeyType.isOperator && currentKeyType.isOperator) ||
+      (previousKeyType.isOperator &&
+        previousKey !== '-' &&
+        currentKeyType.isNumber)
+    ) {
+      AppContext.keyList.merge([' ', key]);
+    } else {
+      AppContext.keyList[AppContext.keyList.length].set(key);
+    }
+
+    AppContext.total.set(AppContext.keyList.length);
+    return;
   }
 
   static calculate() {
+    if (AppContext.total.get() === 0) return;
+
     AppContext.calculating.set(true);
 
-    const stackStages: CalculationResult[] = [];
+    const stackStages: IterationResult[] = [];
     const stack: number[] = [];
     const keyChain = AppContext.keyList.get().join('');
-    const tokens = keyChain.split(' ');
+    const tokens = keyChain.split(' ').filter((value) => value !== '');
 
-    tokens.forEach((value, index) => {
-      if ('+−×÷'.includes(value)) {
-        const [rightHandle, leftHandle] = [stack.pop()!, stack.pop()!];
+    for (let index = 0; index < tokens.length; index++) {
+      const value = tokens[index];
+
+      if (AppContext.operators.includes(value)) {
+        const [rightHandle, leftHandle] = [stack.pop(), stack.pop()];
+
+        if (
+          isNaN(rightHandle as number) ||
+          isNaN(leftHandle as number) ||
+          !(rightHandle && leftHandle)
+        ) {
+          stackStages.push({
+            rawData: ['undefined'],
+            calculationStartsAt: 0,
+            calculationResult: 'Error',
+            highlight: new Map<number, string>([[0, 'red']]),
+            calculationAboutToMake: [
+              leftHandle,
+              value,
+              rightHandle,
+              '=',
+              'Error',
+            ],
+          });
+
+          AppContext.result.set(stackStages);
+          AppContext.calculating.set(false);
+          return;
+        }
 
         let thisResult = 0;
         let operationColor = '';
@@ -75,7 +132,7 @@ export default abstract class AppContext {
           operationColor = 'blue';
           thisResult = leftHandle + rightHandle;
         }
-        if (value === '−') {
+        if (value === '-') {
           operationColor = 'red';
           thisResult = leftHandle - rightHandle;
         }
@@ -83,9 +140,13 @@ export default abstract class AppContext {
           operationColor = 'orange';
           thisResult = leftHandle * rightHandle;
         }
-        if (value === '÷') {
+        if (value === '/') {
           operationColor = '#cc66ff';
           thisResult = leftHandle / rightHandle;
+        }
+        if (value === '%') {
+          operationColor = '#cc66ff';
+          thisResult = leftHandle % rightHandle;
         }
 
         thisResult = Math.round(thisResult * 10000) / 10000;
@@ -98,6 +159,8 @@ export default abstract class AppContext {
 
         stackStages.push({
           rawData: [...stack, leftHandle, rightHandle, ...tokens.slice(index)],
+          calculationStartsAt: stack.length,
+          calculationResult: thisResult,
           highlight: highlight,
           calculationAboutToMake: [
             leftHandle,
@@ -112,19 +175,21 @@ export default abstract class AppContext {
       } else {
         stack.push(Number.parseFloat(value));
       }
-    });
+    }
 
     const final = stack.pop()!;
-    const highlight = new Map<number, string>([[0, 'green']]);
 
     stackStages.push({
       rawData: [final],
-      highlight: highlight,
+      calculationStartsAt: 0,
+      calculationResult: final,
+      highlight: new Map<number, string>([[0, 'green']]),
       calculationAboutToMake: [final],
     });
 
     AppContext.result.set(stackStages);
     AppContext.calculating.set(false);
+    AppContext.displayingResult.set(true);
   }
 
   static resetCalculation() {

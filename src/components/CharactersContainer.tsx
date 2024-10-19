@@ -1,7 +1,7 @@
-import { useHookstate } from '@hookstate/core';
+import { State, useHookstate } from '@hookstate/core';
 import { animate, motion, useMotionValue } from 'framer-motion';
 import { memo, useCallback, useEffect, useMemo } from 'react';
-import AppContext from '../contextProvider';
+import AppContext, { IterationResult } from '../contextProvider';
 
 const CharactersContainer = memo(() => {
   const calculating = useHookstate(AppContext.calculating);
@@ -9,13 +9,6 @@ const CharactersContainer = memo(() => {
   const result = useHookstate(AppContext.result);
   const displayingResult = useHookstate(AppContext.displayingResult);
   const currentDisplayResult = useHookstate(0);
-
-  const reset = useCallback(() => {
-    result.set([]);
-    currentDisplayResult.set(0);
-    displayingResult.set(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (result.length > 0) {
@@ -73,47 +66,12 @@ const CharactersContainer = memo(() => {
                 ))}
         </div>
       </div>
-      <div className="flex w-2/3 justify-between items-center">
-        <p>
-          {displayingResult.get()
-            ? result[currentDisplayResult.get()].calculationAboutToMake
-                .get()
-                .join(' ')
-            : ''}
-        </p>
-        <div className="flex items-center gap-4 pt-2">
-          {!displayingResult.get() && <Utilities />}
-          {displayingResult.get() && (
-            <a
-              onClick={() =>
-                currentDisplayResult.get() > 0
-                  ? currentDisplayResult.set((p) => p - 1)
-                  : reset()
-              }
-            >
-              {currentDisplayResult.get() > 0 ? 'Previous' : 'Cancel'}
-            </a>
-          )}
-          <a
-            className={`bg-black rounded-full pt-2 pb-2 pl-4 pr-4 text-white ${
-              calculating.get() ? 'pointer-events-none' : ''
-            } `}
-            onClick={() =>
-              !displayingResult.get()
-                ? AppContext.calculate()
-                : currentDisplayResult.get() < result.length - 1
-                ? currentDisplayResult.set((p) => p + 1)
-                : reset()
-            }
-          >
-            {!displayingResult.get()
-              ? 'Calculate'
-              : currentDisplayResult.get() < result.length - 1
-              ? 'Next'
-              : 'Finish'}
-          </a>
-        </div>
-      </div>
+      <CalculateButtons
+        displayingResult={displayingResult}
+        result={result}
+        currentDisplayResult={currentDisplayResult}
+        calculating={calculating}
+      />
     </div>
   );
 });
@@ -159,9 +117,75 @@ const TypingCharacter = memo(
   }
 );
 
+function CalculateButtons(props: {
+  displayingResult: State<boolean, object>;
+  result: State<IterationResult[], object>;
+  currentDisplayResult: State<number, object>;
+  calculating: State<boolean, object>;
+}) {
+  const reset = useCallback(() => {
+    props.result.set([]);
+    props.currentDisplayResult.set(0);
+    props.displayingResult.set(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div className="flex w-2/3 justify-between items-center">
+      <p>
+        {props.displayingResult.get()
+          ? props.result[
+              props.currentDisplayResult.get()
+            ].calculationAboutToMake
+              .get()
+              .join(' ')
+          : ''}
+      </p>
+      <div className="flex items-center gap-4 pt-2">
+        {!props.displayingResult.get() && <Utilities />}
+        {props.displayingResult.get() && (
+          <a
+            onClick={() =>
+              props.currentDisplayResult.get() > 0
+                ? props.currentDisplayResult.set((p) => p - 1)
+                : reset()
+            }
+          >
+            {props.currentDisplayResult.get() > 0 ? 'Previous' : 'Cancel'}
+          </a>
+        )}
+        <a
+          className={`bg-black rounded-full pt-2 pb-2 pl-4 pr-4 text-white ${
+            props.calculating.get() ? 'pointer-events-none' : ''
+          } `}
+          onClick={() =>
+            !props.displayingResult.get()
+              ? AppContext.calculate()
+              : props.currentDisplayResult.get() < props.result.length - 1
+              ? props.currentDisplayResult.set((p) => p + 1)
+              : reset()
+          }
+        >
+          {!props.displayingResult.get()
+            ? 'Calculate'
+            : props.currentDisplayResult.get() < props.result.length - 1
+            ? 'Next'
+            : 'Finish'}
+        </a>
+      </div>
+    </div>
+  );
+}
+
 function Utilities() {
   return (
     <>
+      <div className="relative h-5 rounded-full overflow-clip outline outline-1">
+        <div className="flex text-sm gap-3 pl-2 pr-2 text-black mix-blend-difference">
+          <p>Normal</p>
+          <p>Reversed</p>
+        </div>
+      </div>
       <a onClick={AppContext.clear}>
         <motion.svg
           whileTap={{ scale: 1.25 }}
