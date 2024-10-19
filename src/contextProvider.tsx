@@ -33,10 +33,6 @@ export default abstract class AppContext {
   static numbers = '1234567890';
   static operators = '+-×/%';
 
-  static assert(condition: boolean) {
-    if (!condition) throw Error('Condition not met');
-  }
-
   static addKey(key: string) {
     const operatorSymbol =
       AppContext.operatorSymbolsMapping[
