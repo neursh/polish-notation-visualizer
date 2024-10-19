@@ -1,6 +1,11 @@
 import { hookstate, none } from '@hookstate/core';
 import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager';
 
+export enum NotationType {
+  Normal,
+  Reversed,
+}
+
 export interface IterationResult {
   rawData: (string | number)[];
   calculationStartsAt: number;
@@ -11,6 +16,7 @@ export interface IterationResult {
 
 export default abstract class AppContext {
   static displayingResult = hookstate(false);
+  static notationType = hookstate(NotationType.Normal);
   static result = hookstate<IterationResult[]>([]);
   static calculating = hookstate(false);
   static total = hookstate(0);

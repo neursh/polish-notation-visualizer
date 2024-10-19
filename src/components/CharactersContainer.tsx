@@ -1,7 +1,7 @@
 import { State, useHookstate } from '@hookstate/core';
 import { animate, motion, useMotionValue } from 'framer-motion';
 import { memo, useCallback, useEffect, useMemo } from 'react';
-import AppContext, { IterationResult } from '../contextProvider';
+import AppContext, { IterationResult, NotationType } from '../contextProvider';
 
 const CharactersContainer = memo(() => {
   const calculating = useHookstate(AppContext.calculating);
@@ -180,12 +180,7 @@ function CalculateButtons(props: {
 function Utilities() {
   return (
     <>
-      <div className="relative h-5 rounded-full overflow-clip outline outline-1">
-        <div className="flex text-sm gap-3 pl-2 pr-2 text-black mix-blend-difference">
-          <p>Normal</p>
-          <p>Reversed</p>
-        </div>
-      </div>
+      <SelectNotationType />
       <a onClick={AppContext.clear}>
         <motion.svg
           whileTap={{ scale: 1.25 }}
@@ -193,7 +188,7 @@ function Utilities() {
           viewBox="0 -960 960 960"
           fill="black"
         >
-          <path d="M440-122q-121-15-200.5-105.5T160-440q0-66 26-126.5T260-672l57 57q-38 34-57.5 79T240-440q0 88 56 155.5T440-202v80Zm80 0v-80q87-16 143.5-83T720-440q0-100-70-170t-170-70h-3l44 44-56 56-140-140 140-140 56 56-44 44h3q134 0 227 93t93 227q0 121-79.5 211.5T520-122Z" />
+          <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z" />
         </motion.svg>
       </a>
       <a onClick={AppContext.copy}>
@@ -217,6 +212,62 @@ function Utilities() {
         </motion.svg>
       </a>
     </>
+  );
+}
+
+function SelectNotationType() {
+  const notationType = useHookstate(AppContext.notationType);
+
+  const changeType = useCallback(() => {
+    notationType.set(
+      notationType.get() === NotationType.Normal
+        ? NotationType.Reversed
+        : NotationType.Normal
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const width = useMotionValue(100);
+  const rotate = useMotionValue(0);
+  useEffect(() => {
+    if (notationType.get() === NotationType.Normal) {
+      animate(width, 100, {
+        ease: [0.25, 0.25, 0, 1],
+      });
+      animate(rotate, rotate.get() + 360, {
+        ease: [0, 0, 0, 0],
+        repeat: Infinity,
+        duration: 4,
+      });
+    } else {
+      animate(width, 110, {
+        ease: [0.25, 0.25, 0, 1],
+      });
+      animate(rotate, rotate.get() - 360, {
+        ease: [0, 0, 0, 0],
+        repeat: Infinity,
+        duration: 4,
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [notationType]);
+
+  return (
+    <motion.div
+      className="flex items-center justify-center text-sm gap-3 pl-2 pr-2 h-5 rounded-full overflow-clip outline outline-1"
+      style={{ width }}
+      onClick={changeType}
+    >
+      <motion.svg
+        className="h-4 w-4"
+        style={{ rotate }}
+        viewBox="0 -960 960 960"
+        fill="black"
+      >
+        <path d="M204-318q-22-38-33-78t-11-82q0-134 93-228t227-94h7l-64-64 56-56 160 160-160 160-56-56 64-64h-7q-100 0-170 70.5T240-478q0 26 6 51t18 49l-60 60ZM481-40 321-200l160-160 56 56-64 64h7q100 0 170-70.5T720-482q0-26-6-51t-18-49l60-60q22 38 33 78t11 82q0 134-93 228t-227 94h-7l64 64-56 56Z" />
+      </motion.svg>
+      <p className="-translate-x-1">{NotationType[notationType.get()]}</p>
+    </motion.div>
   );
 }
 
