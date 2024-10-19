@@ -2,5 +2,5 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 fn main() {
-    rpn_visualizer_lib::run()
+    polish_notation_visualizer_lib::run()
 }

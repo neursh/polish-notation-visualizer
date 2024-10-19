@@ -30,7 +30,7 @@ function Title() {
         />
       </svg>
       <p data-tauri-drag-region className="text-sm font-medium">
-        Reverse Polish Notation Visualizer
+      Polish Notation Visualizer
       </p>
     </div>
   );
