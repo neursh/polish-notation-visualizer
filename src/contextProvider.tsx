@@ -33,7 +33,7 @@ export default abstract class AppContext {
 
   static numbers = '1234567890';
   static operators = '+-×/%';
-
+  // check input if it's in mappings
   static addKey(key: string) {
     const operatorSymbol =
       AppContext.operatorSymbolsMapping[
@@ -62,7 +62,7 @@ export default abstract class AppContext {
         return;
       }
     }
-
+    // check if key is a number or an opertor symbol
     const previousKeyType = {
       isNumber: AppContext.numbers.includes(previousKey),
       isOperator: AppContext.operators.includes(previousKey),
@@ -71,7 +71,7 @@ export default abstract class AppContext {
       isNumber: AppContext.numbers.includes(key),
       isOperator: AppContext.operators.includes(key),
     };
-
+    //auto spacing :D  
     if (
       (previousKeyType.isNumber && currentKeyType.isOperator) ||
       (previousKeyType.isOperator && currentKeyType.isOperator) ||
@@ -87,7 +87,7 @@ export default abstract class AppContext {
     AppContext.total.set(AppContext.keyList.length);
     return;
   }
-
+  //calculating reverse/normal polish notation 
   static calculate() {
     if (AppContext.total.get() === 0) return;
 
@@ -109,8 +109,8 @@ export default abstract class AppContext {
         const [rightHandle, leftHandle] = [stack.pop(), stack.pop()];
 
         if (
-          isNaN(rightHandle as number) ||
-          isNaN(leftHandle as number) ||
+          Number.isNaN(rightHandle as number) ||
+          Number.isNaN(leftHandle as number) ||
           !(rightHandle && leftHandle)
         ) {
           stackStages.push({
