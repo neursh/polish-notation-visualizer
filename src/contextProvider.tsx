@@ -87,7 +87,7 @@ export default abstract class AppContext {
     AppContext.total.set(AppContext.keyList.length);
     return;
   }
-  //calculating reverse polish notation 
+  //calculating reverse/normal polish notation 
   static calculate() {
     if (AppContext.total.get() === 0) return;
 
