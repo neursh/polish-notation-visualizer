@@ -20,8 +20,8 @@ export function reverseCalculate() {
       infixStack.push(`(${leftInfixHandle} ${value} ${rightInfixHandle})`);
 
       if (
-        Number.isNaN(rightHandle as number) ||
-        Number.isNaN(leftHandle as number) ||
+        Number.isNaN(rightHandle) ||
+        Number.isNaN(leftHandle) ||
         !(rightHandle && leftHandle)
       ) {
         stackStages.push({
