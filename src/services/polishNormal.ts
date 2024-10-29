@@ -58,84 +58,90 @@ class InfixNormalBuilder {
 
 export function normalCalculate() {
   const stackStages: IterationResult[] = [];
-  const stack: (string | number)[] = [];
+  const stack: number[] = [];
   const keyChain = AppContext.keyList.get().join('');
   const tokens = keyChain.split(' ').filter((value) => value !== '');
 
   let infixNotation = '';
   infixNotation = InfixNormalBuilder.buildTree([...tokens]).infixExpression();
 
-  let previousIsNumber = false;
-
-  for (let index = 0; index < tokens.length; index++) {
+  for (let index = tokens.length - 1; index >= 0; index--) {
     const value = tokens[index];
 
     if (AppContext.operators.includes(value)) {
-      stack.push(value);
-      console.log(stack);
-      previousIsNumber = false;
-    } else {
-      stack.push(Number.parseFloat(value));
+      const [leftHandle, rightHandle] = [
+        stack.pop(),
+        stack.pop(),
+      ];
 
-      if (previousIsNumber) {
-        const [rightHandle, leftHandle, operator] = [
-          stack.pop() as number,
-          stack.pop() as number,
-          stack.pop() as string,
-        ];
-
-        let thisResult = 0;
-        let operationColor = '';
-
-        if (operator === '+') {
-          operationColor = 'blue';
-          thisResult = leftHandle + rightHandle;
-        }
-        if (operator === '-') {
-          operationColor = 'red';
-          thisResult = leftHandle - rightHandle;
-        }
-        if (operator === '×') {
-          operationColor = 'orange';
-          thisResult = leftHandle * rightHandle;
-        }
-        if (operator === '/') {
-          operationColor = '#cc66ff';
-          thisResult = leftHandle / rightHandle;
-        }
-        if (operator === '%') {
-          operationColor = '#cc66ff';
-          thisResult = leftHandle % rightHandle;
-        }
-
-        thisResult = Math.round(thisResult * 10000) / 10000;
-
-        let highlightArray: [number, string][] = [];
-        highlightArray = [
-          [stack.length, operationColor],
-          [stack.length + 1, 'green'],
-          [stack.length + 2, 'green'],
-        ];
-        const highlight = new Map<number, string>(highlightArray);
-
+      if (
+        Number.isNaN(rightHandle) ||
+        Number.isNaN(leftHandle) ||
+        !(rightHandle && leftHandle)
+      ) {
         stackStages.push({
-          rawData: [
-            ...stack,
-            operator,
-            leftHandle,
-            rightHandle,
-            ...tokens.slice(index + 1),
-          ],
-          calculationStartsAt: stack.length,
-          calculationResult: thisResult,
-          highlight: highlight,
-          hint: [leftHandle, operator, rightHandle, '=', thisResult],
+          rawData: ['undefined'],
+          calculationStartsAt: 0,
+          calculationResult: 'Error',
+          highlight: new Map<number, string>([[0, 'red']]),
+          hint: [leftHandle, value, rightHandle, '=', 'Error'],
         });
 
-        stack.push(thisResult);
-      } else {
-        previousIsNumber = true;
+        AppContext.result.set(stackStages);
+        AppContext.calculating.set(false);
+        return;
       }
+
+      let thisResult = 0;
+      let operationColor = '';
+
+      if (value === '+') {
+        operationColor = 'blue';
+        thisResult = leftHandle + rightHandle;
+      }
+      if (value === '-') {
+        operationColor = 'red';
+        thisResult = leftHandle - rightHandle;
+      }
+      if (value === '×') {
+        operationColor = 'orange';
+        thisResult = leftHandle * rightHandle;
+      }
+      if (value === '/') {
+        operationColor = '#cc66ff';
+        thisResult = leftHandle / rightHandle;
+      }
+      if (value === '%') {
+        operationColor = '#cc66ff';
+        thisResult = leftHandle % rightHandle;
+      }
+
+      thisResult = Math.round(thisResult * 10000) / 10000;
+
+      let highlightArray: [number, string][] = [];
+      highlightArray = [
+        [index, operationColor],
+        [index + 1, 'green'],
+        [index + 2, 'green'],
+      ];
+      const highlight = new Map<number, string>(highlightArray);
+
+      stackStages.push({
+        rawData: [
+          ...tokens.slice(0, index + 1),
+          leftHandle,
+          rightHandle,
+          ...stack,
+        ],
+        calculationStartsAt: stack.length,
+        calculationResult: thisResult,
+        highlight: highlight,
+        hint: [leftHandle, value, rightHandle, '=', thisResult],
+      });
+
+      stack.push(thisResult);
+    } else {
+      stack.push(Number.parseFloat(value));
     }
   }
 
