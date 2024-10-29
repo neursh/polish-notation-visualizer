@@ -1,6 +1,6 @@
 import { State, useHookstate } from '@hookstate/core';
 import { animate, motion, useMotionValue } from 'framer-motion';
-import { memo, useCallback, useEffect, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 import AppContext, { IterationResult, NotationType } from '../contextProvider';
 
 const CharactersContainer = memo(() => {
@@ -36,36 +36,32 @@ const CharactersContainer = memo(() => {
   }, [currentDisplayResult, displayingResult, result]);
 
   return (
-    <div className="flex flex-col w-full items-center justify-top mt-[calc(48px+5vh)] mb-4">
-      <div className="min-h-[160px] w-2/3 flex items-start overflow-clip pt-2 pb-2 pr-4 pl-4 outline outline-gray-400 outline-2 rounded-lg">
-        <div
-          className="flex flex-wrap font-semibold text-3xl"
-          id="character-container"
-        >
-          {displayingResult.get()
-            ? result[currentDisplayResult.get()].rawData
-                .get()
-                .map((value, index) => (
-                  <DisplayingCharacter
-                    key={index}
-                    highlightColor={
-                      displayingResult.get() ? highlight?.get(index) : undefined
-                    }
-                    value={`${value}\u00A0\u00A0`}
-                    delay={displayingResult.get() ? index * 0.025 : 0}
-                  />
-                ))
-            : keyList
-                .get()
-                .map((value, index) => (
-                  <TypingCharacter
-                    value={value}
-                    key={index}
-                    id={`key-${index}`}
-                  />
-                ))}
-        </div>
-      </div>
+    <div className="flex flex-col w-full items-center justify-top mt-[calc(48px+5vh)] mb-4 gap-4">
+      <KeyContainer>
+        {displayingResult.get()
+          ? result[currentDisplayResult.get()].rawData
+              .get()
+              .map((value, index) => (
+                <DisplayingCharacter
+                  key={index}
+                  highlightColor={
+                    displayingResult.get() ? highlight?.get(index) : undefined
+                  }
+                  value={`${value}\u00A0\u00A0`}
+                  delay={displayingResult.get() ? index * 0.025 : 0}
+                  alwaysReanimated={true}
+                />
+              ))
+          : keyList
+              .get()
+              .map((value, index) => (
+                <TypingCharacter
+                  value={value}
+                  key={index}
+                  id={`key-${index}`}
+                />
+              ))}
+      </KeyContainer>
       <CalculateButtons
         displayingResult={displayingResult}
         result={result}
@@ -76,20 +72,39 @@ const CharactersContainer = memo(() => {
   );
 });
 
+function KeyContainer(props: { children: JSX.Element[] | JSX.Element }) {
+  return (
+    <div className="min-h-[160px] w-2/3 flex items-start overflow-clip pt-2 pb-2 pr-4 pl-4 outline outline-gray-400 outline-2 rounded-lg">
+      <div
+        className="flex flex-wrap font-semibold text-3xl"
+        id="character-container"
+      >
+        {props.children}
+      </div>
+    </div>
+  );
+}
+
 function DisplayingCharacter(props: {
   value: string | number;
   delay: number;
   highlightColor?: string;
+  alwaysReanimated: boolean;
 }) {
   const opacity = useMotionValue(0);
   const translateX = useMotionValue(10);
+  const animated = useRef(false);
 
   useEffect(() => {
-    opacity.set(0);
-    translateX.set(10);
+    if (props.alwaysReanimated || !animated.current) {
+      animated.current = true;
 
-    animate(opacity, 1, { ease: [0.25, 0.25, 0, 1], delay: props.delay });
-    animate(translateX, 0, { ease: [0.25, 0.25, 0, 1], delay: props.delay });
+      opacity.set(0);
+      translateX.set(10);
+
+      animate(opacity, 1, { ease: [0.25, 0.25, 0, 1], delay: props.delay });
+      animate(translateX, 0, { ease: [0.25, 0.25, 0, 1], delay: props.delay });
+    }
   });
 
   return (
@@ -123,6 +138,8 @@ function CalculateButtons(props: {
   currentDisplayResult: State<number, object>;
   calculating: State<boolean, object>;
 }) {
+  const result = useHookstate(AppContext.result);
+
   const reset = useCallback(() => {
     props.result.set([]);
     props.currentDisplayResult.set(0);
@@ -134,15 +151,17 @@ function CalculateButtons(props: {
     <div className="flex w-2/3 justify-between items-center">
       <p>
         {props.displayingResult.get()
-          ? props.result[
-              props.currentDisplayResult.get()
-            ].calculationAboutToMake
-              .get()
-              .join(' ')
+          ? props.result[props.currentDisplayResult.get()].hint.get().join(' ')
           : ''}
       </p>
-      <div className="flex items-center gap-4 pt-2">
-        {!props.displayingResult.get() && <Utilities />}
+      <div className="flex items-center gap-4">
+        {props.displayingResult.get() ? (
+          <p className="text-xs">
+            {props.currentDisplayResult.get() + 1} / {result.length}
+          </p>
+        ) : (
+          <Utilities />
+        )}
         {props.displayingResult.get() && (
           <a
             onClick={() =>
