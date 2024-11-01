@@ -1,5 +1,4 @@
 import { hookstate, none } from '@hookstate/core';
-import { readText, writeText } from '@tauri-apps/plugin-clipboard-manager';
 import { normalCalculate } from './services/polishNormal';
 import { reverseCalculate } from './services/polishReverse';
 
@@ -112,13 +111,13 @@ export default abstract class AppContext {
   }
 
   static async copy() {
-    await writeText(AppContext.keyList.get().join(''));
+    await navigator.clipboard.writeText(AppContext.keyList.get().join(''));
   }
 
   static async paste() {
     AppContext.calculating.set(true);
 
-    const text = (await readText()).split('');
+    const text = await navigator.clipboard.readText();
     let current = 0;
     const total = text.length;
     const recall = () =>
