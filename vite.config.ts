@@ -29,5 +29,4 @@ export default defineConfig(async () => ({
       ignored: ['**/src-tauri/**'],
     },
   },
-  base: '/polish-notation-visualizer/',
 }));
